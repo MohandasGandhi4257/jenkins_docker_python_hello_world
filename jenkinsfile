@@ -1,0 +1,57 @@
+pipeline {
+    // Defines where the pipeline will run (any available agent)
+    agent any
+
+    // Defines environment variables used throughout the pipeline
+    environment {
+        // Use consistent variable name: DOCKER_IMAGE
+        DOCKER_IMAGE = 'hello-world-python:1.0'
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                // Checkout the source code from the specified GitHub repository and branch
+                git branch: 'main', url: 'https://github.com/MohandasGandhi4257/jenkins_docker_python_hello_world.git'
+            }
+        }
+
+        stage('Docker Build') {
+            steps {
+                // Use a 'script' block to encapsulate Groovy conditional logic (if/else)
+                script {
+                    if (fileExists('Dockerfile')) {
+                        // Corrected: 'docker build -t' (lowercase 'docker'), use ${env.DOCKER_IMAGE} variable, and remove the trailing dot.
+                        sh "docker build -t ${env.DOCKER_IMAGE} ."
+                    } else {
+                        // Fails the build if the Dockerfile is missing
+                        error "Dockerfile not found in the workspace"
+                    }
+                }
+            }
+        }
+
+        stage('Docker Run (Optional)') {
+            steps {
+                // Corrected: 'docker run' (lowercase 'docker'), added space between --rm and the image name
+                sh "docker run --rm ${env.DOCKER_IMAGE}"
+            }
+        }
+    }
+
+    // Post-build actions (executed at the end of the pipeline run)
+    post {
+        success {
+            echo 'Python application Docker image built and run successfully.'
+        }
+        failure {
+            echo 'Docker build or run failed.'
+        }
+        // Always clean up the workspace regardless of status
+        always {
+            cleanWs()
+        }
+    }
+}
+
+
